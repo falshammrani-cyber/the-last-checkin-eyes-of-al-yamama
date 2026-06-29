@@ -28,8 +28,13 @@
     loadFromStartButton: document.getElementById("loadFromStartButton"),
     saveButton: document.getElementById("saveButton"),
     loadButton: document.getElementById("loadButton"),
+    voiceButton: document.getElementById("voiceButton"),
     inventoryButton: document.getElementById("inventoryButton"),
     chapterButton: document.getElementById("chapterButton"),
+    chapterCard: document.getElementById("chapterCard"),
+    chapterKicker: document.getElementById("chapterKicker"),
+    chapterCardTitle: document.getElementById("chapterCardTitle"),
+    chapterCardObjective: document.getElementById("chapterCardObjective"),
     inventoryWheel: document.getElementById("inventoryWheel"),
     chapterSelect: document.getElementById("chapterSelect"),
     chapterList: document.getElementById("chapterList"),
@@ -40,11 +45,11 @@
 
   const TAU = Math.PI * 2;
   const FOV = Math.PI / 3.25;
-  const MAX_DEPTH = 22;
-  const MOVE_SPEED = 2.05;
+  const MAX_DEPTH = 24;
+  const MOVE_SPEED = 1.92;
   const STRAFE_WEIGHT = 0.64;
   const TURN_SPEED = 1.72;
-  const RAY_STEP = 0.024;
+  const RAY_STEP = 0.018;
   const SAVE_KEY = "last-checkin-eyes-of-al-yamama-save-v2";
 
   let W = 1, H = 1, DPR = 1;
@@ -76,7 +81,9 @@
       step: 0,
       motion: 0,
       sway: 0,
-      breath: 0
+      breath: 0,
+      focus: 0,
+      filmPulse: 0
     },
     routeMemory: {},
     lastPlayerCell: "",
@@ -138,11 +145,11 @@
   const palettes = {
     lobby: {
       ceiling: "#070707",
-      floor: "#17120e",
-      wallA: "#5b4630",
-      wallB: "#2e241b",
-      fog: "rgba(0,0,0,0.1)",
-      fogColor: "#8b8170"
+      floor: "#0f1110",
+      wallA: "#4b5147",
+      wallB: "#242820",
+      fog: "rgba(0,0,0,0.12)",
+      fogColor: "#879180"
     },
     security: {
       ceiling: "#02050a",
@@ -203,7 +210,7 @@
   };
 
   function resize() {
-    DPR = Math.min(Math.max(window.devicePixelRatio || 1, 2), 3.5);
+    DPR = Math.min(Math.max(window.devicePixelRatio || 1, 2.75), 4);
     W = Math.floor(window.innerWidth * DPR);
     H = Math.floor(window.innerHeight * DPR);
     canvas.width = W;
@@ -252,10 +259,12 @@
     if (!ui.speakerPortrait || !ui.speakerProfile) return;
     if (!profile) {
       ui.speakerPortrait.classList.add("hidden");
+      ui.speakerPortrait.dataset.character = "";
       ui.speakerProfile.textContent = "";
       return;
     }
     const visual = profile.visual || {};
+    ui.speakerPortrait.dataset.character = characterIdByProfile(profile) || "";
     ui.speakerPortrait.style.setProperty("--portrait-skin", visual.skin || "#b88962");
     ui.speakerPortrait.style.setProperty("--portrait-hair", visual.hair || "#15110e");
     ui.speakerPortrait.style.setProperty("--portrait-cloth", visual.cloth || "#2b2f35");
@@ -266,6 +275,13 @@
       `${escapeHtml(profile.wound)}<br>` +
       `<span>${escapeHtml(profile.truth)}</span>`;
     ui.speakerPortrait.classList.remove("hidden");
+  }
+
+  function characterIdByProfile(profile) {
+    for (const [id, current] of Object.entries(STORY_DATA.characters || {})) {
+      if (current === profile) return id;
+    }
+    return "";
   }
 
   const AudioHorror = {
@@ -386,6 +402,102 @@
     }
   };
 
+  const VoiceDirector = {
+    enabled: true,
+    active: false,
+    voices: [],
+    profiles: {
+      saqer: { rate: 0.88, pitch: 0.82, volume: 0.78, preferred: ["male", "david", "mark", "guy"] },
+      father: { rate: 0.78, pitch: 0.64, volume: 0.82, preferred: ["male", "david", "mark", "george"] },
+      mother: { rate: 0.82, pitch: 1.02, volume: 0.76, preferred: ["female", "zira", "susan", "hazel"] },
+      zarqa: { rate: 0.72, pitch: 1.18, volume: 0.70, preferred: ["female", "zira", "samantha", "susan"] },
+      bellboy: { rate: 0.76, pitch: 0.72, volume: 0.72, preferred: ["male", "david", "mark"] },
+      bride: { rate: 0.70, pitch: 1.06, volume: 0.70, preferred: ["female", "zira", "susan", "samantha"] },
+      qareen: { rate: 0.62, pitch: 0.52, volume: 0.74, preferred: ["male", "david", "mark"] },
+      mudawwin: { rate: 0.66, pitch: 0.46, volume: 0.78, preferred: ["male", "david", "mark"] },
+      system: { rate: 0.82, pitch: 0.72, volume: 0.62, preferred: ["male", "david", "mark", "zira"] }
+    },
+
+    available() {
+      return "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+    },
+
+    init() {
+      if (!this.available()) {
+        this.enabled = false;
+        this.updateButton();
+        return;
+      }
+      this.refreshVoices();
+      window.speechSynthesis.onvoiceschanged = () => this.refreshVoices();
+      this.updateButton();
+    },
+
+    refreshVoices() {
+      if (!this.available()) return;
+      this.voices = window.speechSynthesis.getVoices() || [];
+    },
+
+    activate() {
+      this.active = true;
+      this.refreshVoices();
+      this.updateButton();
+    },
+
+    toggle() {
+      this.enabled = !this.enabled;
+      if (!this.enabled && this.available()) window.speechSynthesis.cancel();
+      this.updateButton();
+    },
+
+    updateButton() {
+      if (!ui.voiceButton) return;
+      ui.voiceButton.textContent = this.enabled ? "Voice On" : "Voice Off";
+      ui.voiceButton.disabled = !this.available();
+      ui.voiceButton.title = this.available() ? "Toggle spoken dialogue" : "Speech voices are not available in this browser";
+    },
+
+    clean(text) {
+      return String(text || "")
+        .replace(/[•*_#`]/g, " ")
+        .replace(/\b[A-Z][A-Z -]{7,}:/g, "")
+        .replace(/\n+/g, ". ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 420);
+    },
+
+    pickVoice(profile) {
+      if (!this.voices.length) this.refreshVoices();
+      const english = this.voices.filter(v => String(v.lang || "").toLowerCase().startsWith("en"));
+      const pool = english.length ? english : this.voices;
+      const preferred = profile.preferred || [];
+      for (const key of preferred) {
+        const found = pool.find(v => String(v.name || "").toLowerCase().includes(key));
+        if (found) return found;
+      }
+      return pool[0] || null;
+    },
+
+    speak(text, options = {}) {
+      if (!this.enabled || !this.active || !this.available()) return;
+      const line = this.clean(text);
+      if (!line) return;
+      const characterId = options.characterId || characterIdFromSpeaker(options.speaker) || "system";
+      const profile = this.profiles[characterId] || this.profiles.system;
+      if (!options.interrupt && window.speechSynthesis.speaking) return;
+      if (options.interrupt !== false) window.speechSynthesis.cancel();
+      const utterance = new window.SpeechSynthesisUtterance(line);
+      const voice = this.pickVoice(profile);
+      if (voice) utterance.voice = voice;
+      utterance.rate = clamp((profile.rate || 0.82) + (options.rateBias || 0), 0.48, 1.18);
+      utterance.pitch = clamp((profile.pitch || 0.82) + (options.pitchBias || 0), 0.35, 1.45);
+      utterance.volume = clamp(options.volume ?? profile.volume ?? 0.72, 0.12, 1);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+  VoiceDirector.init();
+
   function getChapterById(id) {
     return STORY_DATA.chapters.find(c => c.id === id);
   }
@@ -446,11 +558,56 @@
     ui.objective.textContent = "Objective: " + chapter.objective;
     updateStateLine();
 
-    if (chapter.intro && options.intro !== false) {
-      startCutscene(chapter.intro);
-    } else {
-      showMessage(chapter.title, 1800);
+    const proceed = () => {
+      if (chapter.intro && options.intro !== false) {
+        startCutscene(chapter.intro);
+      } else {
+        game.paused = false;
+        showMessage(chapter.title, 1800);
+      }
+    };
+
+    if (options.card === false) proceed();
+    else showChapterCard(chapter, proceed);
+  }
+
+  function chapterCardTitle(chapter) {
+    const raw = chapter.title || "";
+    return raw.includes(":") ? raw.split(":").slice(1).join(":").trim() : raw;
+  }
+
+  function chapterCardKicker(chapter) {
+    const index = STORY_DATA.chapters.indexOf(chapter);
+    if (chapter.id === "tower") return "FINAL CHAPTER";
+    return `CHAPTER ${String(index + 1).padStart(2, "0")}`;
+  }
+
+  function showChapterCard(chapter, onDone) {
+    if (!ui.chapterCard) {
+      if (typeof onDone === "function") onDone();
+      return;
     }
+    game.paused = true;
+    clearTimeout(showChapterCard._showTimer);
+    clearTimeout(showChapterCard._hideTimer);
+    ui.chapterKicker.textContent = chapterCardKicker(chapter);
+    ui.chapterCardTitle.textContent = chapterCardTitle(chapter);
+    ui.chapterCardObjective.textContent = chapter.objective || "";
+    ui.chapterCard.classList.remove("hidden");
+    requestAnimationFrame(() => ui.chapterCard.classList.add("show"));
+    VoiceDirector.speak(`${chapterCardKicker(chapter)}. ${chapterCardTitle(chapter)}. ${chapter.objective}`, {
+      characterId: "mudawwin",
+      interrupt: true,
+      volume: 0.54,
+      rateBias: -0.08
+    });
+    showChapterCard._showTimer = setTimeout(() => {
+      ui.chapterCard.classList.remove("show");
+      showChapterCard._hideTimer = setTimeout(() => {
+        ui.chapterCard.classList.add("hidden");
+        if (typeof onDone === "function") onDone();
+      }, 720);
+    }, 2300);
   }
 
   function updateStateLine() {
@@ -520,6 +677,7 @@
   }
 
   function loadGame() {
+    VoiceDirector.activate();
     let data;
     try {
       data = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
@@ -536,6 +694,7 @@
     ui.choicePanel.classList.add("hidden");
     ui.cutscene.classList.add("hidden");
     AudioHorror.start();
+    VoiceDirector.activate();
     game.running = true;
     game.paused = false;
     loadChapter(data.chapterId, { intro: false });
@@ -565,6 +724,12 @@
     ui.message.classList.remove("hidden");
     clearTimeout(showMessage._timer);
     showMessage._timer = setTimeout(() => ui.message.classList.add("hidden"), ms);
+    VoiceDirector.speak(text, {
+      characterId: "system",
+      interrupt: false,
+      volume: 0.38,
+      rateBias: -0.06
+    });
   }
 
   function startCutscene(id, onDone, characterHint = "") {
@@ -587,6 +752,11 @@
       characterIdFromSpeaker(scene.speaker) ||
       game.currentCutscene.characterHint;
     renderSpeakerProfile(getCharacterProfile(characterId));
+    VoiceDirector.speak(scene.text || "", {
+      speaker: scene.speaker,
+      characterId,
+      interrupt: true
+    });
   }
 
   ui.nextCutscene.addEventListener("click", () => {
@@ -721,6 +891,12 @@
     ui.endingPanel.classList.remove("hidden");
     game.paused = true;
     AudioHorror.sting();
+    VoiceDirector.speak(`${e.title}. ${e.text}`, {
+      characterId: "mudawwin",
+      interrupt: true,
+      volume: 0.74,
+      rateBias: -0.08
+    });
   }
 
   ui.restartButton.addEventListener("click", () => location.reload());
@@ -1064,7 +1240,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     ctx.fillRect(0, horizon, W, H - horizon);
 
     // floor lines for movement/tension
-    ctx.globalAlpha = 0.20;
+    ctx.globalAlpha = 0.15;
     ctx.strokeStyle = "rgba(0,0,0,0.85)";
     for (let y = horizon; y < H; y += H / 30) {
       ctx.beginPath();
@@ -1081,7 +1257,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     }
     ctx.globalAlpha = 1;
 
-    const columns = Math.min(1800, Math.max(420, Math.floor(W / (DPR >= 2.5 ? 1.35 : 1.55))));
+    const columns = Math.min(2600, Math.max(760, Math.floor(W / (DPR >= 3 ? 1.05 : 1.18))));
     const colW = W / columns;
 
     for (let i = 0; i < columns; i++) {
@@ -1109,6 +1285,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
 
       ctx.fillStyle = hexToRgba(palette.fogColor, fog * (game.flashlight ? 0.36 : 0.58));
       ctx.fillRect(x, y, colW + 1, wallHeight);
+      drawWallSurfaceDetails(i, x, y, colW, wallHeight, corrected, fog, ray, cameraX);
 
       // vertical damp/wall texture
       if (i % 9 === 0) {
@@ -1134,9 +1311,45 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     drawForegroundSilhouette();
     drawVignette();
     drawFearOverlay();
+    drawCinematicGrade(palette, horizon);
     drawPostProcess();
+    drawLetterbox();
 
     if (game.dev) drawMiniMap();
+  }
+
+  function wallNoise(a, b, seed = 0) {
+    const n = Math.sin(a * 12.9898 + b * 78.233 + seed * 37.719) * 43758.5453;
+    return n - Math.floor(n);
+  }
+
+  function drawWallSurfaceDetails(i, x, y, colW, wallHeight, corrected, fog, ray, cameraX) {
+    if (wallHeight <= 2) return;
+    const cellX = Math.floor(ray.hitX);
+    const cellY = Math.floor(ray.hitY);
+    const seed = cellX * 31 + cellY * 17 + i * 0.13;
+    const stain = wallNoise(cellX, cellY, i);
+    if (stain > 0.52) {
+      const top = y + wallHeight * (0.08 + wallNoise(seed, 2) * 0.24);
+      const h = wallHeight * (0.22 + wallNoise(seed, 3) * 0.36);
+      ctx.fillStyle = `rgba(0,0,0,${0.035 + fog * 0.11})`;
+      ctx.fillRect(x, top, colW + 1, h);
+    }
+    if (i % 17 === 0) {
+      const crack = wallNoise(seed, 9);
+      ctx.strokeStyle = `rgba(0,0,0,${0.16 + fog * 0.22})`;
+      ctx.lineWidth = Math.max(1, 0.42 * DPR);
+      ctx.beginPath();
+      const startY = y + wallHeight * (0.18 + crack * 0.18);
+      ctx.moveTo(x + colW * 0.5, startY);
+      ctx.lineTo(x + colW * (0.2 + crack), startY + wallHeight * (0.10 + wallNoise(seed, 10) * 0.18));
+      ctx.lineTo(x + colW * (0.65 - crack * 0.25), startY + wallHeight * (0.24 + wallNoise(seed, 11) * 0.18));
+      ctx.stroke();
+    }
+    if (Math.abs(cameraX) < 0.08 && corrected > 2.2 && corrected < 7.5 && i % 11 === 0) {
+      ctx.fillStyle = `rgba(255,235,195,${0.018 + (1 - fog) * 0.028})`;
+      ctx.fillRect(x, y + wallHeight * 0.36, colW + 1, Math.max(1, wallHeight * 0.018));
+    }
   }
 
   function drawWorldFog(palette, horizon) {
@@ -1187,6 +1400,72 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     ctx.restore();
   }
 
+  function drawCinematicGrade(palette, horizon) {
+    ctx.save();
+    const tension = clamp((game.record.debt + game.record.qareen + game.record.violence + game.bellboy.heat) / 18, 0, 1);
+    const cool = game.chapter?.walls === "security" || game.chapter?.walls === "tower";
+    const grade = ctx.createLinearGradient(0, 0, W, H);
+    grade.addColorStop(0, cool ? "rgba(25,48,82,0.16)" : "rgba(65,45,26,0.12)");
+    grade.addColorStop(0.5, "rgba(0,0,0,0)");
+    grade.addColorStop(1, `rgba(55,0,0,${0.08 + tension * 0.11})`);
+    ctx.fillStyle = grade;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalCompositeOperation = "screen";
+    const lens = ctx.createRadialGradient(W * 0.48, horizon * 0.92, 0, W * 0.48, horizon * 0.92, Math.min(W, H) * 0.42);
+    lens.addColorStop(0, hexToRgba(palette.fogColor, game.flashlight ? 0.14 : 0.045));
+    lens.addColorStop(0.56, "rgba(255,255,255,0.015)");
+    lens.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = lens;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalCompositeOperation = "source-over";
+    const leftGate = ctx.createLinearGradient(0, 0, W * 0.32, 0);
+    leftGate.addColorStop(0, "rgba(0,0,0,0.50)");
+    leftGate.addColorStop(0.62, "rgba(0,0,0,0.16)");
+    leftGate.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = leftGate;
+    ctx.fillRect(0, 0, W * 0.32, H);
+
+    const rightGate = ctx.createLinearGradient(W * 0.68, 0, W, 0);
+    rightGate.addColorStop(0, "rgba(0,0,0,0)");
+    rightGate.addColorStop(0.38, "rgba(0,0,0,0.16)");
+    rightGate.addColorStop(1, "rgba(0,0,0,0.50)");
+    ctx.fillStyle = rightGate;
+    ctx.fillRect(W * 0.68, 0, W * 0.32, H);
+    ctx.restore();
+  }
+
+  function drawLetterbox() {
+    ctx.save();
+    const bar = Math.max(36 * DPR, H * 0.078);
+    const gradTop = ctx.createLinearGradient(0, 0, 0, bar * 1.35);
+    gradTop.addColorStop(0, "rgba(0,0,0,0.96)");
+    gradTop.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = gradTop;
+    ctx.fillRect(0, 0, W, bar * 1.35);
+
+    const gradBottom = ctx.createLinearGradient(0, H - bar * 1.35, 0, H);
+    gradBottom.addColorStop(0, "rgba(0,0,0,0)");
+    gradBottom.addColorStop(1, "rgba(0,0,0,0.98)");
+    ctx.fillStyle = gradBottom;
+    ctx.fillRect(0, H - bar * 1.35, W, bar * 1.35);
+
+    ctx.fillStyle = "rgba(0,0,0,0.88)";
+    ctx.fillRect(0, 0, W, bar * 0.68);
+    ctx.fillRect(0, H - bar * 0.68, W, bar * 0.68);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = Math.max(1, DPR * 0.6);
+    ctx.beginPath();
+    ctx.moveTo(W * 0.06, bar * 0.72);
+    ctx.lineTo(W * 0.94, bar * 0.72);
+    ctx.moveTo(W * 0.06, H - bar * 0.72);
+    ctx.lineTo(W * 0.94, H - bar * 0.72);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawPostProcess() {
     ctx.save();
     ctx.globalAlpha = 0.11;
@@ -1229,12 +1508,12 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     const bride = id === "bride";
     const zarqa = id === "zarqa";
     const bellboy = id === "bellboy";
-    const height = size * (child ? 1.85 : shadow ? 2.65 : 2.35);
-    const width = size * (child ? 0.58 : bride ? 0.86 : 0.68);
+    const height = size * (child ? 1.98 : shadow ? 2.86 : 2.55);
+    const width = size * (child ? 0.62 : bride ? 0.94 : 0.78);
     const top = feetY - height;
-    const headRadius = height * (child ? 0.105 : 0.092);
-    const headY = top + height * 0.22;
-    const torsoTop = top + height * 0.34;
+    const headRadius = height * (child ? 0.112 : 0.101);
+    const headY = top + height * 0.205;
+    const torsoTop = top + height * 0.335;
     const torsoBottom = feetY - height * 0.17;
     const alpha = options.alpha ?? clamp(1 - dist / 9, 0.18, 0.92);
 
@@ -1243,6 +1522,11 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     ctx.fillStyle = "rgba(0,0,0,0.44)";
     ctx.beginPath();
     ctx.ellipse(screenX, feetY + size * 0.05, width * 0.78, size * 0.16, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.fillStyle = shadeColor(cloth, shadow ? 0.26 : 0.55);
+    ctx.beginPath();
+    ctx.ellipse(screenX, torsoTop + height * 0.035, width * 0.62, height * 0.095, 0, 0, TAU);
     ctx.fill();
 
     const bodyGrad = ctx.createLinearGradient(screenX, torsoTop, screenX, feetY);
@@ -1273,6 +1557,15 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     ctx.closePath();
     ctx.fill();
 
+    ctx.fillStyle = hexToRgba(accent, shadow ? 0.24 : 0.12);
+    ctx.beginPath();
+    ctx.moveTo(screenX - width * 0.22, torsoTop + height * 0.03);
+    ctx.lineTo(screenX + width * 0.22, torsoTop + height * 0.03);
+    ctx.lineTo(screenX + width * 0.30, torsoBottom);
+    ctx.lineTo(screenX - width * 0.30, torsoBottom);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.strokeStyle = hexToRgba(accent, shadow ? 0.72 : 0.38);
     ctx.lineWidth = Math.max(1, 1.15 * DPR);
     ctx.beginPath();
@@ -1289,6 +1582,14 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     ctx.lineTo(screenX + width * 0.50, torsoBottom - height * 0.06);
     ctx.stroke();
 
+    if (!shadow) {
+      ctx.fillStyle = skin;
+      ctx.beginPath();
+      ctx.ellipse(screenX - width * 0.52, torsoBottom - height * 0.055, width * 0.055, height * 0.030, 0.15, 0, TAU);
+      ctx.ellipse(screenX + width * 0.52, torsoBottom - height * 0.055, width * 0.055, height * 0.030, -0.15, 0, TAU);
+      ctx.fill();
+    }
+
     if (!bride && !shadow) {
       ctx.strokeStyle = "rgba(0,0,0,0.48)";
       ctx.lineWidth = Math.max(2, width * 0.07);
@@ -1300,10 +1601,26 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
       ctx.stroke();
     }
 
+    ctx.fillStyle = shadow ? shadeColor(skin, 0.20) : shadeColor(skin, 0.78);
+    ctx.fillRect(screenX - headRadius * 0.36, headY + headRadius * 0.70, headRadius * 0.72, headRadius * 0.76);
+
     ctx.fillStyle = shadow ? shadeColor(skin, 0.32) : skin;
     ctx.beginPath();
     ctx.ellipse(screenX, headY, headRadius * 0.82, headRadius * 1.04, 0, 0, TAU);
     ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath();
+    ctx.ellipse(screenX - headRadius * 0.22, headY - headRadius * 0.18, headRadius * 0.22, headRadius * 0.42, -0.12, 0, TAU);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(50,25,18,0.38)";
+    ctx.lineWidth = Math.max(1, headRadius * 0.045);
+    ctx.beginPath();
+    ctx.moveTo(screenX, headY - headRadius * 0.02);
+    ctx.lineTo(screenX - headRadius * 0.05, headY + headRadius * 0.26);
+    ctx.lineTo(screenX + headRadius * 0.08, headY + headRadius * 0.32);
+    ctx.stroke();
 
     ctx.fillStyle = hair;
     ctx.beginPath();
@@ -1320,10 +1637,25 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
 
     ctx.fillStyle = eye;
     const eyeY = headY - headRadius * 0.08;
+    ctx.strokeStyle = "rgba(0,0,0,0.45)";
+    ctx.lineWidth = Math.max(1, headRadius * 0.04);
+    ctx.beginPath();
+    ctx.moveTo(screenX - headRadius * 0.49, eyeY - headRadius * 0.14);
+    ctx.lineTo(screenX - headRadius * 0.12, eyeY - headRadius * 0.18);
+    ctx.moveTo(screenX + headRadius * 0.12, eyeY - headRadius * 0.18);
+    ctx.lineTo(screenX + headRadius * 0.49, eyeY - headRadius * 0.14);
+    ctx.stroke();
     ctx.beginPath();
     ctx.ellipse(screenX - headRadius * 0.28, eyeY, Math.max(1, headRadius * 0.09), Math.max(1, headRadius * 0.045), 0, 0, TAU);
     ctx.ellipse(screenX + headRadius * 0.28, eyeY, Math.max(1, headRadius * 0.09), Math.max(1, headRadius * 0.045), 0, 0, TAU);
     ctx.fill();
+
+    ctx.strokeStyle = "rgba(65,18,18,0.44)";
+    ctx.lineWidth = Math.max(1, headRadius * 0.035);
+    ctx.beginPath();
+    ctx.moveTo(screenX - headRadius * 0.23, headY + headRadius * 0.55);
+    ctx.lineTo(screenX + headRadius * 0.23, headY + headRadius * 0.55);
+    ctx.stroke();
 
     if (bellboy) {
       ctx.strokeStyle = hexToRgba("#f2d990", 0.88);
@@ -1366,9 +1698,10 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
       ctx.globalAlpha = clamp(1 - dist / 8, 0.15, 0.9);
       if (ev.character) {
         drawCharacterSprite(ev.character, screenX, screenY, size, dist);
+        const labelLift = ev.character === "qareen" || ev.character === "mudawwin" ? 3.18 : 2.96;
         ctx.fillStyle = ev.type === "choice" ? "rgba(189,154,79,0.95)" : "rgba(103,167,255,0.88)";
         ctx.beginPath();
-        ctx.arc(screenX, screenY - size * 2.58, size * 0.09, 0, TAU);
+        ctx.arc(screenX, screenY - size * labelLift, size * 0.09, 0, TAU);
         ctx.fill();
       } else {
         ctx.fillStyle = ev.type === "choice" ? "rgba(189,154,79,0.95)" : "rgba(103,167,255,0.85)";
@@ -1381,7 +1714,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
       ctx.font = `${Math.max(12, 15 * DPR)}px Georgia`;
       ctx.textAlign = "center";
       ctx.fillStyle = "#fff4d9";
-      ctx.fillText(ev.label, screenX, ev.character ? screenY - size * 2.74 : screenY - size * 0.35);
+      ctx.fillText(ev.label, screenX, ev.character ? screenY - size * (ev.character === "qareen" || ev.character === "mudawwin" ? 3.34 : 3.10) : screenY - size * 0.35);
       ctx.restore();
     }
   }
@@ -1429,22 +1762,13 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
 
     ctx.save();
     ctx.globalAlpha = clamp(1 - dist / 11, 0.15, 0.85);
-    ctx.fillStyle = game.bellboy.state === "hunting" ? "#160202" : "#080606";
-    ctx.fillRect(screenX - size * 0.18, y - size, size * 0.36, size);
-    ctx.fillStyle = game.bellboy.state === "collecting" ? "#6d5b2f" : "#806226";
-    ctx.beginPath();
-    ctx.ellipse(screenX, y - size * 0.82, size * 0.16, size * 0.20, 0, 0, TAU);
-    ctx.fill();
-    ctx.strokeStyle = "#d8c68b";
-    ctx.stroke();
-
-    ctx.fillStyle = "rgba(0,0,0,0.8)";
-    ctx.fillRect(screenX - size * 0.34, y - size * 0.56, size * 0.68, size * 0.36);
+    drawCharacterSprite("bellboy", screenX, y + size * 0.14, size * 0.76, dist, { alpha: 1 });
+    ctx.fillStyle = "rgba(0,0,0,0.78)";
+    ctx.fillRect(screenX - size * 0.38, y - size * 1.02, size * 0.76, size * 0.18);
     ctx.fillStyle = "#fff0c0";
     ctx.font = `${Math.max(12, 14 * DPR)}px Georgia`;
     ctx.textAlign = "center";
-    const label = game.bellboy.state === "hunting" ? "The Bellboy: hunting" : "The Bellboy";
-    ctx.fillText(label, screenX, y - size * 1.08);
+    ctx.fillText(game.bellboy.state === "hunting" ? "The Bellboy: hunting" : "The Bellboy", screenX, y - size * 0.88);
     ctx.restore();
   }
 
@@ -1709,6 +2033,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
   function startGame() {
     ui.startScreen.classList.add("hidden");
     AudioHorror.start();
+    VoiceDirector.activate();
     game.running = true;
     game.paused = false;
     loadChapter(0);
@@ -1727,6 +2052,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     saveGame();
   });
   ui.loadButton.addEventListener("click", loadGame);
+  ui.voiceButton?.addEventListener("click", () => VoiceDirector.toggle());
   ui.inventoryButton.addEventListener("click", () => toggleInventory());
   ui.chapterButton.addEventListener("click", openChapterSelect);
   ui.closeChapterSelect.addEventListener("click", closeChapterSelect);

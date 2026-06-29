@@ -30,3 +30,4 @@ This is an original story direction for **The Last Check-In: Eyes of Al-Yamama**
 - New story beats: lobby mirror, childhood CCTV feed, mother's basement call, family table memory.
 - True ending now needs a humane psychological state, not only mechanical survival conditions.
 - Characters now have data-driven profile text and visual palettes in `story-data.js`.
+- Cinematic pass adds chapter title cards, denser high-DPI rendering, procedural wall grime, letterbox framing, and browser-native speech voices for spoken messages when supported.

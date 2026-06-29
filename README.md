@@ -1,7 +1,7 @@
 # THE LAST CHECK-IN: EYES OF AL-YAMAMA
 ## آخر تسجيل دخول: عيون اليمامة
 
-A runnable high-resolution browser survival-horror demo with grounded characters, psychological choice tracking, and a full playable story path.
+A runnable high-resolution browser survival-horror demo with grounded characters, voiced messages, psychological choice tracking, and a full playable story path.
 
 **Protagonist / Guest:** Saqer  
 **Age:** 18  
@@ -74,10 +74,12 @@ On-screen buttons are included:
 ## Prototype Features
 
 - High-DPI 3D-style raycast rendering with no external dependencies.
-- Dense fog, depth haze, flashlight falloff, film grain, scanlines, and foreground silhouette.
+- Higher internal canvas scale, denser raycasts, grime-textured walls, dense fog, depth haze, flashlight falloff, film grain, scanlines, letterbox framing, and foreground silhouette.
 - Slower survival-horror movement with heavier turning and reduced strafing.
 - Grounded character profiles for Saqer, his parents, Zarqa, the Bellboy, the Qareen, the Barefoot Bride, and Al-Mudawwin.
-- In-world character silhouettes and cutscene portraits drawn directly in canvas/CSS for an asset-light but more human presentation.
+- More human in-world character silhouettes and larger cinematic cutscene portraits drawn directly in canvas/CSS for an asset-light presentation.
+- Browser-native speech voices for cutscenes, title cards, system messages, and endings when the player enables audio through a supported browser.
+- Psychological-horror chapter cards before each chapter.
 - Bellboy AI with pathing, line-of-sight pursuit, route habit tracking, and shoe-lure response.
 - Inventory wheel, chapter select, save/load, and mobile controls.
 - Psychological choice system:

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>The Last Check-In: Eyes of Al-Yamama</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link rel="stylesheet" href="styles.css?v=story-depth-20260630" />
+  <link rel="stylesheet" href="styles.css?v=cinematic-voices-20260630" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -19,6 +19,7 @@
   <div id="systemBar">
     <button id="saveButton" type="button">Save</button>
     <button id="loadButton" type="button">Load</button>
+    <button id="voiceButton" type="button">Voice On</button>
     <button id="inventoryButton" type="button">Inventory</button>
     <button id="chapterButton" type="button">Chapters</button>
   </div>
@@ -29,6 +30,14 @@
   </div>
 
   <div id="message" class="hidden"></div>
+
+  <div id="chapterCard" class="hidden">
+    <div class="chapter-card-inner">
+      <div id="chapterKicker"></div>
+      <div id="chapterCardTitle"></div>
+      <div id="chapterCardObjective"></div>
+    </div>
+  </div>
 
   <div id="startScreen">
     <div class="panel wide">
@@ -114,7 +123,7 @@
     </div>
   </div>
 
-  <script src="story-data.js?v=story-depth-20260630"></script>
-  <script src="game.js?v=story-depth-20260630"></script>
+  <script src="story-data.js?v=cinematic-voices-20260630"></script>
+  <script src="game.js?v=cinematic-voices-20260630"></script>
 </body>
 </html>
