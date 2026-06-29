@@ -37,10 +37,12 @@
   };
 
   const TAU = Math.PI * 2;
-  const FOV = Math.PI / 3;
-  const MAX_DEPTH = 18;
-  const MOVE_SPEED = 2.5;
-  const TURN_SPEED = 2.2;
+  const FOV = Math.PI / 3.25;
+  const MAX_DEPTH = 22;
+  const MOVE_SPEED = 2.05;
+  const STRAFE_WEIGHT = 0.64;
+  const TURN_SPEED = 1.72;
+  const RAY_STEP = 0.024;
   const SAVE_KEY = "last-checkin-eyes-of-al-yamama-save-v2";
 
   let W = 1, H = 1, DPR = 1;
@@ -68,6 +70,12 @@
     pendingNextChapter: null,
     eventMessageCooldown: 0,
     hotelPulse: 0,
+    visual: {
+      step: 0,
+      motion: 0,
+      sway: 0,
+      breath: 0
+    },
     routeMemory: {},
     lastPlayerCell: "",
     shoeLure: null,
@@ -127,65 +135,75 @@
       floor: "#17120e",
       wallA: "#5b4630",
       wallB: "#2e241b",
-      fog: "rgba(0,0,0,0.1)"
+      fog: "rgba(0,0,0,0.1)",
+      fogColor: "#8b8170"
     },
     security: {
       ceiling: "#02050a",
       floor: "#08101c",
       wallA: "#1e3a54",
       wallB: "#0b1722",
-      fog: "rgba(30,80,140,0.08)"
+      fog: "rgba(30,80,140,0.08)",
+      fogColor: "#6b8faf"
     },
     rooms: {
       ceiling: "#080606",
       floor: "#170d0d",
       wallA: "#5a2424",
       wallB: "#241010",
-      fog: "rgba(80,0,0,0.08)"
+      fog: "rgba(80,0,0,0.08)",
+      fogColor: "#8c5752"
     },
     wedding: {
       ceiling: "#0d0202",
       floor: "#270707",
       wallA: "#7a1414",
       wallB: "#2b0505",
-      fog: "rgba(140,0,0,0.13)"
+      fog: "rgba(140,0,0,0.13)",
+      fogColor: "#9c524c"
     },
     service: {
       ceiling: "#050706",
       floor: "#0d130f",
       wallA: "#324034",
       wallB: "#121a14",
-      fog: "rgba(0,50,20,0.08)"
+      fog: "rgba(0,50,20,0.08)",
+      fogColor: "#657565"
     },
     bank: {
       ceiling: "#050505",
       floor: "#101010",
       wallA: "#3d3a30",
       wallB: "#161611",
-      fog: "rgba(160,130,80,0.06)"
+      fog: "rgba(160,130,80,0.06)",
+      fogColor: "#8b846f"
     },
     home: {
       ceiling: "#090807",
       floor: "#21160f",
       wallA: "#6a4b32",
       wallB: "#2b1b12",
-      fog: "rgba(180,120,40,0.05)"
+      fog: "rgba(180,120,40,0.05)",
+      fogColor: "#96704d"
     },
     tower: {
       ceiling: "#000003",
       floor: "#050409",
       wallA: "#1b1430",
       wallB: "#07040e",
-      fog: "rgba(80,80,180,0.10)"
+      fog: "rgba(80,80,180,0.10)",
+      fogColor: "#676ba8"
     }
   };
 
   function resize() {
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    DPR = Math.min(window.devicePixelRatio || 1, 3);
     W = Math.floor(window.innerWidth * DPR);
     H = Math.floor(window.innerHeight * DPR);
     canvas.width = W;
     canvas.height = H;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     canvas.style.width = "100vw";
     canvas.style.height = "100vh";
   }
@@ -875,7 +893,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     }
 
     const playerDist = Math.hypot(game.player.x - b.x, game.player.y - b.y);
-    const sightRange = 4.3 + b.heat * 0.38 + (game.flashlight ? 2.6 : 0);
+    const sightRange = 3.9 + b.heat * 0.42 + (game.flashlight ? 3.15 : 0);
     const seesPlayer = playerDist < sightRange && hasLineOfSight(b.x, b.y, game.player.x, game.player.y);
 
     if (seesPlayer) {
@@ -927,12 +945,12 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     const dest = b.path[0] || b.target;
     if (dest) {
       const speed =
-        (0.55 + b.heat * 0.075 + b.suspicion * 0.035) *
-        (b.state === "hunting" ? 1.35 : b.state === "collecting" ? 0.78 : 1);
+        (0.70 + b.heat * 0.09 + b.suspicion * 0.045) *
+        (b.state === "hunting" ? 1.48 : b.state === "collecting" ? 0.76 : 1);
       if (moveBellboyToward(dest, speed * dt)) b.path.shift();
     }
 
-    if (playerDist < 0.72) handleBellboyCatch();
+    if (playerDist < 0.78) handleBellboyCatch();
     b.suspicion = Math.max(0, b.suspicion - dt * 0.12);
   }
 
@@ -945,7 +963,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     let hitX = 0, hitY = 0;
 
     while (!hit && distance < MAX_DEPTH) {
-      distance += 0.035;
+      distance += RAY_STEP;
       hitX = game.player.x + cos * distance;
       hitY = game.player.y + sin * distance;
       if (isWall(hitX, hitY)) hit = true;
@@ -957,61 +975,171 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
 
   function render() {
     const palette = palettes[game.chapter?.walls || "lobby"] || palettes.lobby;
+    const horizon = H * 0.52 + (game.visual.sway * 9 + game.visual.breath * 2) * DPR;
 
-    ctx.fillStyle = palette.ceiling;
-    ctx.fillRect(0, 0, W, H / 2);
-    ctx.fillStyle = palette.floor;
-    ctx.fillRect(0, H / 2, W, H / 2);
+    const ceiling = ctx.createLinearGradient(0, 0, 0, horizon);
+    ceiling.addColorStop(0, shadeColor(palette.ceiling, 0.42));
+    ceiling.addColorStop(1, palette.ceiling);
+    ctx.fillStyle = ceiling;
+    ctx.fillRect(0, 0, W, horizon);
+
+    const floor = ctx.createLinearGradient(0, horizon, 0, H);
+    floor.addColorStop(0, shadeColor(palette.floor, 0.95));
+    floor.addColorStop(0.55, palette.floor);
+    floor.addColorStop(1, shadeColor(palette.floor, 0.30));
+    ctx.fillStyle = floor;
+    ctx.fillRect(0, horizon, W, H - horizon);
 
     // floor lines for movement/tension
-    ctx.globalAlpha = 0.22;
-    ctx.strokeStyle = "#000";
-    for (let y = H / 2; y < H; y += H / 26) {
+    ctx.globalAlpha = 0.20;
+    ctx.strokeStyle = "rgba(0,0,0,0.85)";
+    for (let y = horizon; y < H; y += H / 30) {
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(W, y + Math.sin(game.time + y * 0.01) * 3);
+      ctx.lineTo(W, y + Math.sin(game.time * 0.75 + y * 0.008) * 3 * DPR);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 0.13;
+    for (let x = -W; x <= W * 2; x += W / 12) {
+      ctx.beginPath();
+      ctx.moveTo(W / 2, horizon);
+      ctx.lineTo(x + Math.sin(game.time * 0.5 + x) * 8 * DPR, H);
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
 
-    const columns = Math.floor(W / 3);
+    const columns = Math.min(1800, Math.max(420, Math.floor(W / (DPR >= 2.5 ? 1.35 : 1.55))));
     const colW = W / columns;
 
     for (let i = 0; i < columns; i++) {
-      const cameraX = (i / columns) - 0.5;
+      const cameraX = (i / Math.max(1, columns - 1)) - 0.5;
       const rayAngle = game.player.angle + cameraX * FOV;
       const ray = castRay(rayAngle);
       const corrected = ray.distance * Math.cos(rayAngle - game.player.angle);
-      const wallHeight = Math.min(H, H / (corrected + 0.001));
+      const wallHeight = Math.min(H * 1.25, (H * 1.08) / (corrected + 0.001));
       const x = i * colW;
-      const y = (H - wallHeight) / 2;
+      const y = horizon - wallHeight / 2;
 
       const alt = ((Math.floor(ray.hitX) + Math.floor(ray.hitY)) % 2) === 0;
       const base = alt ? palette.wallA : palette.wallB;
-      const brightness = clamp(ray.shade + (game.flashlight ? 0.25 : 0), 0.06, 1.0);
+      const beam = game.flashlight
+        ? clamp(1 - Math.abs(cameraX) * 2.35, 0, 1) * clamp(1 - corrected / 13, 0, 1)
+        : 0;
+      const fog = clamp((corrected - 1.6) / (MAX_DEPTH * 0.62), 0, 0.92);
+      const brightness = clamp(0.08 + ray.shade * 1.14 + beam * 0.62 - fog * 0.48, 0.035, 1.08);
       ctx.fillStyle = shadeColor(base, brightness);
       ctx.fillRect(x, y, colW + 1, wallHeight);
 
+      ctx.fillStyle = `rgba(0,0,0,${0.05 + fog * 0.24})`;
+      ctx.fillRect(x, y, colW + 1, wallHeight * 0.16);
+      ctx.fillRect(x, y + wallHeight * 0.84, colW + 1, wallHeight * 0.16);
+
+      ctx.fillStyle = hexToRgba(palette.fogColor, fog * (game.flashlight ? 0.36 : 0.58));
+      ctx.fillRect(x, y, colW + 1, wallHeight);
+
       // vertical damp/wall texture
-      if (i % 7 === 0) {
-        ctx.fillStyle = `rgba(0,0,0,${0.12 + corrected / MAX_DEPTH * 0.25})`;
-        ctx.fillRect(x, y, 1 * DPR, wallHeight);
+      if (i % 9 === 0) {
+        ctx.fillStyle = `rgba(0,0,0,${0.10 + corrected / MAX_DEPTH * 0.28})`;
+        ctx.fillRect(x, y, Math.max(1, 0.7 * DPR), wallHeight);
+      }
+      if (i % 29 === 0) {
+        ctx.fillStyle = `rgba(210,190,150,${0.025 + fog * 0.04})`;
+        ctx.fillRect(x, y + wallHeight * 0.12, Math.max(1, 1.2 * DPR), wallHeight * 0.72);
       }
 
       // blue-eye camera shimmer in security/tower chapters
       if ((game.chapter?.walls === "security" || game.chapter?.walls === "tower") && i % 37 === 0) {
-        ctx.fillStyle = `rgba(103,167,255,${0.05 + Math.sin(game.time * 3 + i) * 0.03})`;
+        ctx.fillStyle = `rgba(103,167,255,${0.07 + Math.sin(game.time * 3 + i) * 0.04})`;
         ctx.fillRect(x, y, colW * 2, wallHeight);
       }
     }
 
+    drawWorldFog(palette, horizon);
     drawEvents3D();
     drawShoeLure();
     drawBellboy();
+    drawForegroundSilhouette();
     drawVignette();
     drawFearOverlay();
+    drawPostProcess();
 
     if (game.dev) drawMiniMap();
+  }
+
+  function drawWorldFog(palette, horizon) {
+    ctx.save();
+    const heavy = game.flashlight ? 0.34 : 0.52;
+    const fog = ctx.createLinearGradient(0, horizon - H * 0.05, 0, H);
+    fog.addColorStop(0, hexToRgba(palette.fogColor, 0.04));
+    fog.addColorStop(0.45, hexToRgba(palette.fogColor, heavy * 0.18));
+    fog.addColorStop(1, hexToRgba(palette.fogColor, heavy * 0.34));
+    ctx.fillStyle = fog;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalCompositeOperation = "screen";
+    for (let i = 0; i < 8; i++) {
+      const y = horizon + ((i * H * 0.12 + game.time * (9 + i * 2) * DPR) % (H * 0.92));
+      const alpha = 0.018 + (i % 3) * 0.008;
+      ctx.fillStyle = hexToRgba(palette.fogColor, alpha);
+      ctx.fillRect(0, y, W, (18 + i * 3) * DPR);
+    }
+    ctx.restore();
+  }
+
+  function drawForegroundSilhouette() {
+    ctx.save();
+    const baseY = H * 1.015 + game.visual.sway * 3 * DPR;
+    ctx.fillStyle = "rgba(0,0,0,0.46)";
+    ctx.beginPath();
+    ctx.ellipse(W * 0.09, baseY, W * 0.16, H * 0.13, -0.12, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(W * 0.92, baseY + H * 0.015, W * 0.15, H * 0.12, 0.10, 0, TAU);
+    ctx.fill();
+
+    if (game.flashlight) {
+      ctx.globalCompositeOperation = "screen";
+      const beam = ctx.createRadialGradient(W * 0.62, H * 0.73, 0, W * 0.52, H * 0.42, Math.min(W, H) * 0.54);
+      beam.addColorStop(0, "rgba(255,238,180,0.20)");
+      beam.addColorStop(0.42, "rgba(185,210,255,0.09)");
+      beam.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = beam;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(5,5,6,0.78)";
+      ctx.fillRect(W * 0.56, H * 0.83 + game.visual.sway * 2 * DPR, W * 0.13, H * 0.035);
+      ctx.fillStyle = "rgba(220,190,120,0.28)";
+      ctx.fillRect(W * 0.67, H * 0.835 + game.visual.sway * 2 * DPR, W * 0.035, H * 0.020);
+    }
+    ctx.restore();
+  }
+
+  function drawPostProcess() {
+    ctx.save();
+    ctx.globalAlpha = 0.11;
+    ctx.fillStyle = "#000";
+    const step = Math.max(2, Math.floor(4 * DPR));
+    for (let y = 0; y < H; y += step) {
+      ctx.fillRect(0, y, W, 1);
+    }
+
+    const grainCount = Math.min(420, Math.floor((W * H) / 26000));
+    for (let i = 0; i < grainCount; i++) {
+      const n = Math.sin((i + 1) * 78.233 + game.time * 41.31) * 43758.5453;
+      const f = n - Math.floor(n);
+      const x = (f * W) | 0;
+      const y = (((Math.sin(n) * 0.5 + 0.5) * H) | 0);
+      const bright = i % 2 === 0;
+      ctx.fillStyle = bright ? "rgba(255,255,255,0.075)" : "rgba(0,0,0,0.12)";
+      ctx.fillRect(x, y, Math.max(1, DPR), Math.max(1, DPR));
+    }
+
+    const edge = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.20, W / 2, H / 2, Math.max(W, H) * 0.72);
+    edge.addColorStop(0, "rgba(0,0,0,0)");
+    edge.addColorStop(1, "rgba(0,0,0,0.32)");
+    ctx.fillStyle = edge;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   }
 
   function drawEvents3D() {
@@ -1192,8 +1320,7 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
 
     const r = game.record;
     const shoeNoise = game.barefoot ? 0.7 : 1.0;
-    const moveSpeed = MOVE_SPEED * (game.barefoot ? 0.82 : 1.0) * (r.debt >= 5 ? 0.92 : 1);
-    const turnSpeed = TURN_SPEED;
+    const moveSpeed = MOVE_SPEED * (game.barefoot ? 0.78 : 1.0) * (r.debt >= 5 ? 0.90 : 1);
 
     let forward = 0, strafe = 0, turn = 0;
 
@@ -1204,16 +1331,22 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     if (game.keys["KeyQ"] || game.keys["ArrowLeft"] || game.touch.turnLeft) turn -= 1;
     if (game.keys["KeyE"] || game.keys["ArrowRight"] || game.touch.turnRight) turn += 1;
 
+    const moveInput = clamp(Math.hypot(forward, strafe), 0, 1);
+    const turnSpeed = TURN_SPEED * (moveInput > 0 ? 0.78 : 1) * (game.flashlight ? 0.92 : 1);
     game.player.angle = normalizeAbsoluteAngle(game.player.angle + turn * turnSpeed * dt);
+    game.visual.motion += (moveInput - game.visual.motion) * Math.min(1, dt * 5.5);
+    game.visual.step += dt * (game.visual.motion > 0.05 ? (game.barefoot ? 2.8 : 3.9) : 0.72);
+    game.visual.sway = Math.sin(game.visual.step * 2.0) * game.visual.motion;
+    game.visual.breath = Math.sin(game.time * (game.barefoot ? 1.3 : 1.05)) * (0.35 + game.bellboy.suspicion * 0.035);
 
     if (forward || strafe) {
       const ca = Math.cos(game.player.angle);
       const sa = Math.sin(game.player.angle);
-      const dx = (ca * forward + Math.cos(game.player.angle + Math.PI/2) * strafe) * moveSpeed * dt;
-      const dy = (sa * forward + Math.sin(game.player.angle + Math.PI/2) * strafe) * moveSpeed * dt;
+      const dx = (ca * forward + Math.cos(game.player.angle + Math.PI/2) * strafe * STRAFE_WEIGHT) * moveSpeed * dt;
+      const dy = (sa * forward + Math.sin(game.player.angle + Math.PI/2) * strafe * STRAFE_WEIGHT) * moveSpeed * dt;
       move(dx, dy);
       rememberPlayerCell();
-      registerNoise(game.player.x, game.player.y, game.barefoot ? 0.16 : 0.48, "footstep");
+      registerNoise(game.player.x, game.player.y, game.barefoot ? 0.13 : 0.52, "footstep");
 
       game.hotelPulse += dt * (forward > 0 ? 1.2 : 0.8) * shoeNoise;
       if (game.hotelPulse > 8) {
@@ -1492,6 +1625,14 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     const g = parseInt(rgb.slice(2, 4), 16);
     const b = parseInt(rgb.slice(4, 6), 16);
     return `rgb(${Math.floor(r * brightness)},${Math.floor(g * brightness)},${Math.floor(b * brightness)})`;
+  }
+
+  function hexToRgba(hex, alpha) {
+    const rgb = hex.replace("#", "");
+    const r = parseInt(rgb.slice(0, 2), 16);
+    const g = parseInt(rgb.slice(2, 4), 16);
+    const b = parseInt(rgb.slice(4, 6), 16);
+    return `rgba(${r},${g},${b},${clamp(alpha, 0, 1)})`;
   }
 
   // Initial render before game starts.

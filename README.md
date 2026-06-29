@@ -1,7 +1,7 @@
 # THE LAST CHECK-IN: EYES OF AL-YAMAMA
 ## آخر تسجيل دخول: عيون اليمامة
 
-A runnable 3D-style browser prototype for a psychological horror game.
+A runnable high-resolution browser survival-horror demo.
 
 **Protagonist / Guest:** Saqer  
 **Age:** 18  
@@ -10,6 +10,13 @@ A runnable 3D-style browser prototype for a psychological horror game.
 ---
 
 ## How to Run
+
+### Live web page
+Open:
+
+```text
+https://falshammrani-cyber.github.io/the-last-checkin-eyes-of-al-yamama/
+```
 
 ### Option 1: Open directly
 Open `index.html` in a modern browser.
@@ -46,13 +53,18 @@ http://localhost:8080
 - `R`: throw shoe
 - `B`: barefoot / wear shoes
 - `M`: map pulse
+- `I` or `Tab`: inventory wheel
+- `C`: chapter select
 - `D`: show/hide developer meters
+- `F5`: save
+- `F9`: load
 
 ### Mobile / Tablet
 On-screen buttons are included:
 - Move
 - Turn
 - Interact
+- Inventory
 - Flashlight
 - Shoe
 - Barefoot
@@ -61,7 +73,11 @@ On-screen buttons are included:
 
 ## Prototype Features
 
-- 3D-style raycast rendering with no external dependencies.
+- High-DPI 3D-style raycast rendering with no external dependencies.
+- Dense fog, depth haze, flashlight falloff, film grain, scanlines, and foreground silhouette.
+- Slower survival-horror movement with heavier turning and reduced strafing.
+- Bellboy AI with pathing, line-of-sight pursuit, route habit tracking, and shoe-lure response.
+- Inventory wheel, chapter select, save/load, and mobile controls.
 - Psychological choice system:
   - Survival
   - Debt
@@ -71,7 +87,6 @@ On-screen buttons are included:
   - Qareen
 - Cutscene engine.
 - Branching endings.
-- Mobile controls.
 - Ambient horror audio created through WebAudio.
 - No external art or sound assets required.
 
@@ -89,4 +104,3 @@ Every choice should change something:
 - Cutscene dialogue
 - Ending path
 - The player's relationship with Zarqa, Al-Mudawwin, the Bellboy, and the Qareen
-
