@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>The Last Check-In: Eyes of Al-Yamama</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div class="hud-title">THE LAST CHECK-IN</div>
+    <div id="chapterLabel">Chapter 1: Welcome Back</div>
+    <div id="objective">Objective: Enter Qasr Al-Mirath.</div>
+    <div id="stateLine">Shoes: On · Flashlight: Off · Guest: Saqer, 18</div>
+  </div>
+
+  <div id="systemBar">
+    <button id="saveButton" type="button">Save</button>
+    <button id="loadButton" type="button">Load</button>
+    <button id="inventoryButton" type="button">Inventory</button>
+    <button id="chapterButton" type="button">Chapters</button>
+  </div>
+
+  <div id="devMeters" class="hidden">
+    <div>Hotel Record</div>
+    <div id="meterText"></div>
+  </div>
+
+  <div id="message" class="hidden"></div>
+
+  <div id="startScreen">
+    <div class="panel wide">
+      <h1>THE LAST CHECK-IN</h1>
+      <h2>Eyes of Al-Yamama</h2>
+      <p class="arabic">آخر تسجيل دخول: عيون اليمامة</p>
+      <p>
+        Guest Name: <b>Saqer</b><br/>
+        Age: <b>18</b><br/>
+        Status: <b>Collection Active</b>
+      </p>
+      <p class="quote">"The hotel does not kill you. It makes you sign."</p>
+      <button id="startButton" type="button">Check In</button>
+      <button id="loadFromStartButton" type="button">Load Saved Check-In</button>
+      <p class="small">Use headphones. Every choice is recorded.</p>
+    </div>
+  </div>
+
+  <div id="inventoryWheel" class="hidden">
+    <div class="wheel-core">
+      <button class="wheel-item" data-item="shoe" type="button">Original Shoe</button>
+      <button class="wheel-item" data-item="flashlight" type="button">Flashlight</button>
+      <button class="wheel-item" data-item="barefoot" type="button">Barefoot</button>
+      <button class="wheel-item" data-item="receipt" type="button">Receipt</button>
+      <button class="wheel-item" data-item="map" type="button">Map Pulse</button>
+      <button class="wheel-item" data-item="close" type="button">Close</button>
+    </div>
+  </div>
+
+  <div id="chapterSelect" class="hidden">
+    <div class="panel">
+      <div id="chapterSelectTitle">Chapter Select</div>
+      <div id="chapterList"></div>
+      <button id="closeChapterSelect" type="button">Close</button>
+    </div>
+  </div>
+
+  <div id="cutscene" class="hidden">
+    <div class="panel">
+      <div id="speaker"></div>
+      <div id="cutsceneText"></div>
+      <button id="nextCutscene" type="button">Continue</button>
+    </div>
+  </div>
+
+  <div id="choicePanel" class="hidden">
+    <div class="panel">
+      <div id="choiceTitle"></div>
+      <div id="choiceText"></div>
+      <div id="choices"></div>
+    </div>
+  </div>
+
+  <div id="endingPanel" class="hidden">
+    <div class="panel wide">
+      <h1 id="endingTitle"></h1>
+      <div id="endingText"></div>
+      <button id="restartButton" type="button">Restart</button>
+    </div>
+  </div>
+
+  <div id="mobileControls">
+    <div class="touch-group left">
+      <button data-action="forward" type="button">▲</button>
+      <div>
+        <button data-action="strafeLeft" type="button">◀</button>
+        <button data-action="backward" type="button">▼</button>
+        <button data-action="strafeRight" type="button">▶</button>
+      </div>
+    </div>
+    <div class="touch-group right">
+      <button data-action="turnLeft" type="button">↶</button>
+      <button data-action="turnRight" type="button">↷</button>
+      <button data-action="interact" type="button">Interact</button>
+      <button data-action="inventory" type="button">Bag</button>
+      <button data-action="flashlight" type="button">Light</button>
+      <button data-action="shoe" type="button">Shoe</button>
+      <button data-action="barefoot" type="button">Barefoot</button>
+    </div>
+  </div>
+
+  <script src="story-data.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
