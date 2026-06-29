@@ -10,6 +10,8 @@
     stateLine: document.getElementById("stateLine"),
     message: document.getElementById("message"),
     cutscene: document.getElementById("cutscene"),
+    speakerPortrait: document.getElementById("speakerPortrait"),
+    speakerProfile: document.getElementById("speakerProfile"),
     speaker: document.getElementById("speaker"),
     cutsceneText: document.getElementById("cutsceneText"),
     nextCutscene: document.getElementById("nextCutscene"),
@@ -108,6 +110,10 @@
       sacrifice: 0,
       qareen: 0,
       curiosity: 0,
+      empathy: 0,
+      denial: 0,
+      grief: 0,
+      selfKnowledge: 0,
       bellboyHeat: 0,
       signedReceipt: false,
       burnedReceipt: false,
@@ -197,7 +203,7 @@
   };
 
   function resize() {
-    DPR = Math.min(window.devicePixelRatio || 1, 3);
+    DPR = Math.min(Math.max(window.devicePixelRatio || 1, 2), 3.5);
     W = Math.floor(window.innerWidth * DPR);
     H = Math.floor(window.innerHeight * DPR);
     canvas.width = W;
@@ -209,6 +215,58 @@
   }
   window.addEventListener("resize", resize);
   resize();
+
+  const speakerCharacterMap = {
+    "SAQER": "saqer",
+    "FATHER": "father",
+    "MOTHER": "mother",
+    "ZARQA": "zarqa",
+    "THE BELLBOY": "bellboy",
+    "ELEVATOR": "bellboy",
+    "THE BAREFOOT BRIDE": "bride",
+    "AL-MUDAWWIN": "mudawwin",
+    "CCTV FEED 03": "saqer",
+    "FAMILY TABLE": "mother"
+  };
+
+  function getCharacterProfile(id) {
+    if (!id) return null;
+    return STORY_DATA.characters?.[id] || null;
+  }
+
+  function characterIdFromSpeaker(speaker) {
+    if (!speaker) return "";
+    return speakerCharacterMap[String(speaker).trim().toUpperCase()] || "";
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function renderSpeakerProfile(profile) {
+    if (!ui.speakerPortrait || !ui.speakerProfile) return;
+    if (!profile) {
+      ui.speakerPortrait.classList.add("hidden");
+      ui.speakerProfile.textContent = "";
+      return;
+    }
+    const visual = profile.visual || {};
+    ui.speakerPortrait.style.setProperty("--portrait-skin", visual.skin || "#b88962");
+    ui.speakerPortrait.style.setProperty("--portrait-hair", visual.hair || "#15110e");
+    ui.speakerPortrait.style.setProperty("--portrait-cloth", visual.cloth || "#2b2f35");
+    ui.speakerPortrait.style.setProperty("--portrait-accent", visual.accent || "#67a7ff");
+    ui.speakerPortrait.style.setProperty("--portrait-eye", visual.eye || "#201a15");
+    ui.speakerProfile.innerHTML =
+      `<b>${escapeHtml(profile.name)}</b> / ${escapeHtml(profile.role)}<br>` +
+      `${escapeHtml(profile.wound)}<br>` +
+      `<span>${escapeHtml(profile.truth)}</span>`;
+    ui.speakerPortrait.classList.remove("hidden");
+  }
 
   const AudioHorror = {
     ctx: null,
@@ -509,11 +567,11 @@
     showMessage._timer = setTimeout(() => ui.message.classList.add("hidden"), ms);
   }
 
-  function startCutscene(id, onDone) {
+  function startCutscene(id, onDone, characterHint = "") {
     const scenes = STORY_DATA.cutscenes[id];
     if (!scenes) return;
     game.paused = true;
-    game.currentCutscene = { id, scenes, onDone };
+    game.currentCutscene = { id, scenes, onDone, characterHint };
     game.currentCutsceneIndex = 0;
     ui.cutscene.classList.remove("hidden");
     renderCutscene();
@@ -524,6 +582,11 @@
     const scene = game.currentCutscene.scenes[game.currentCutsceneIndex];
     ui.speaker.textContent = scene.speaker || "";
     ui.cutsceneText.textContent = scene.text || "";
+    const characterId =
+      scene.character ||
+      characterIdFromSpeaker(scene.speaker) ||
+      game.currentCutscene.characterHint;
+    renderSpeakerProfile(getCharacterProfile(characterId));
   }
 
   ui.nextCutscene.addEventListener("click", () => {
@@ -606,6 +669,10 @@
     game.record.vision = clamp(game.record.vision, -5, 20);
     game.record.sacrifice = clamp(game.record.sacrifice, 0, 20);
     game.record.qareen = clamp(game.record.qareen, 0, 20);
+    game.record.empathy = clamp(game.record.empathy || 0, 0, 20);
+    game.record.denial = clamp(game.record.denial || 0, 0, 20);
+    game.record.grief = clamp(game.record.grief || 0, 0, 20);
+    game.record.selfKnowledge = clamp(game.record.selfKnowledge || 0, 0, 20);
     game.record.bellboyHeat = clamp(game.record.bellboyHeat, 0, 20);
     game.bellboy.heat = game.record.bellboyHeat + Math.max(0, game.record.debt) * 0.25 + game.record.qareen * 0.2;
   }
@@ -613,6 +680,7 @@
   function resolveEnding() {
     const r = game.record;
     let ending = "trapped";
+    const humanEnough = (r.empathy || 0) + (r.selfKnowledge || 0) >= 2 && (r.denial || 0) <= 5;
 
     const trueEligible =
       r.offeredNothing &&
@@ -620,6 +688,7 @@
       r.debt <= 1 &&
       r.violence <= 3 &&
       r.qareen <= 3 &&
+      humanEnough &&
       r.promisedLedgerBreak &&
       (game.hasOriginalShoe >= 1) &&
       (r.knowsFatherTruth || r.knowsFateBending);
@@ -666,6 +735,10 @@ Vision: ${r.vision}
 Sacrifice: ${r.sacrifice}
 Qareen: ${r.qareen}
 Curiosity: ${r.curiosity}
+Empathy: ${r.empathy}
+Denial: ${r.denial}
+Grief: ${r.grief}
+Self-Knowledge: ${r.selfKnowledge}
 Bellboy Heat: ${r.bellboyHeat}
 Bellboy State: ${game.bellboy.state}
 Suspicion: ${game.bellboy.suspicion.toFixed(1)}
@@ -1142,6 +1215,135 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
     ctx.restore();
   }
 
+  function drawCharacterSprite(id, screenX, feetY, size, dist, options = {}) {
+    const profile = getCharacterProfile(id);
+    if (!profile) return;
+    const visual = profile.visual || {};
+    const skin = visual.skin || "#b88962";
+    const hair = visual.hair || "#15110e";
+    const cloth = visual.cloth || "#2b2f35";
+    const accent = visual.accent || "#67a7ff";
+    const eye = visual.eye || "#201a15";
+    const child = id === "child";
+    const shadow = id === "qareen" || id === "mudawwin";
+    const bride = id === "bride";
+    const zarqa = id === "zarqa";
+    const bellboy = id === "bellboy";
+    const height = size * (child ? 1.85 : shadow ? 2.65 : 2.35);
+    const width = size * (child ? 0.58 : bride ? 0.86 : 0.68);
+    const top = feetY - height;
+    const headRadius = height * (child ? 0.105 : 0.092);
+    const headY = top + height * 0.22;
+    const torsoTop = top + height * 0.34;
+    const torsoBottom = feetY - height * 0.17;
+    const alpha = options.alpha ?? clamp(1 - dist / 9, 0.18, 0.92);
+
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.fillStyle = "rgba(0,0,0,0.44)";
+    ctx.beginPath();
+    ctx.ellipse(screenX, feetY + size * 0.05, width * 0.78, size * 0.16, 0, 0, TAU);
+    ctx.fill();
+
+    const bodyGrad = ctx.createLinearGradient(screenX, torsoTop, screenX, feetY);
+    bodyGrad.addColorStop(0, shadeColor(cloth, shadow ? 0.42 : 1.08));
+    bodyGrad.addColorStop(0.68, cloth);
+    bodyGrad.addColorStop(1, shadeColor(cloth, 0.38));
+    ctx.fillStyle = bodyGrad;
+
+    ctx.beginPath();
+    if (bride) {
+      ctx.moveTo(screenX - width * 0.30, torsoTop);
+      ctx.lineTo(screenX + width * 0.30, torsoTop);
+      ctx.lineTo(screenX + width * 0.64, feetY);
+      ctx.lineTo(screenX - width * 0.64, feetY);
+    } else if (shadow) {
+      ctx.moveTo(screenX - width * 0.26, torsoTop);
+      ctx.lineTo(screenX + width * 0.26, torsoTop);
+      ctx.lineTo(screenX + width * 0.48, feetY);
+      ctx.lineTo(screenX - width * 0.48, feetY);
+    } else {
+      ctx.moveTo(screenX - width * 0.38, torsoTop);
+      ctx.lineTo(screenX + width * 0.38, torsoTop);
+      ctx.lineTo(screenX + width * 0.31, torsoBottom);
+      ctx.lineTo(screenX + width * 0.18, feetY);
+      ctx.lineTo(screenX - width * 0.18, feetY);
+      ctx.lineTo(screenX - width * 0.31, torsoBottom);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = hexToRgba(accent, shadow ? 0.72 : 0.38);
+    ctx.lineWidth = Math.max(1, 1.15 * DPR);
+    ctx.beginPath();
+    ctx.moveTo(screenX, torsoTop + height * 0.02);
+    ctx.lineTo(screenX, torsoBottom);
+    ctx.stroke();
+
+    ctx.strokeStyle = shadow ? hexToRgba(accent, 0.82) : "rgba(0,0,0,0.48)";
+    ctx.lineWidth = Math.max(2, width * 0.055);
+    ctx.beginPath();
+    ctx.moveTo(screenX - width * 0.32, torsoTop + height * 0.07);
+    ctx.lineTo(screenX - width * 0.50, torsoBottom - height * 0.06);
+    ctx.moveTo(screenX + width * 0.32, torsoTop + height * 0.07);
+    ctx.lineTo(screenX + width * 0.50, torsoBottom - height * 0.06);
+    ctx.stroke();
+
+    if (!bride && !shadow) {
+      ctx.strokeStyle = "rgba(0,0,0,0.48)";
+      ctx.lineWidth = Math.max(2, width * 0.07);
+      ctx.beginPath();
+      ctx.moveTo(screenX - width * 0.12, torsoBottom);
+      ctx.lineTo(screenX - width * 0.18, feetY);
+      ctx.moveTo(screenX + width * 0.12, torsoBottom);
+      ctx.lineTo(screenX + width * 0.18, feetY);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = shadow ? shadeColor(skin, 0.32) : skin;
+    ctx.beginPath();
+    ctx.ellipse(screenX, headY, headRadius * 0.82, headRadius * 1.04, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.fillStyle = hair;
+    ctx.beginPath();
+    ctx.ellipse(screenX, headY - headRadius * 0.48, headRadius * 0.92, headRadius * 0.48, 0, Math.PI, TAU);
+    ctx.fill();
+    if (bride || zarqa) {
+      ctx.globalAlpha *= 0.82;
+      ctx.fillStyle = bride ? "rgba(235,226,208,0.42)" : hexToRgba(accent, 0.28);
+      ctx.beginPath();
+      ctx.ellipse(screenX, headY + headRadius * 0.1, headRadius * 1.18, headRadius * 1.55, 0, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha /= 0.82;
+    }
+
+    ctx.fillStyle = eye;
+    const eyeY = headY - headRadius * 0.08;
+    ctx.beginPath();
+    ctx.ellipse(screenX - headRadius * 0.28, eyeY, Math.max(1, headRadius * 0.09), Math.max(1, headRadius * 0.045), 0, 0, TAU);
+    ctx.ellipse(screenX + headRadius * 0.28, eyeY, Math.max(1, headRadius * 0.09), Math.max(1, headRadius * 0.045), 0, 0, TAU);
+    ctx.fill();
+
+    if (bellboy) {
+      ctx.strokeStyle = hexToRgba("#f2d990", 0.88);
+      ctx.lineWidth = Math.max(1, 1.4 * DPR);
+      ctx.strokeRect(screenX - headRadius * 0.56, headY - headRadius * 0.50, headRadius * 1.12, headRadius * 0.96);
+    }
+
+    if (zarqa || shadow || bellboy) {
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = Math.max(8, size * 0.20);
+      ctx.strokeStyle = hexToRgba(accent, shadow ? 0.78 : 0.55);
+      ctx.lineWidth = Math.max(1, 1.1 * DPR);
+      ctx.beginPath();
+      ctx.ellipse(screenX, headY, headRadius * 1.10, headRadius * 1.26, 0, 0, TAU);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
   function drawEvents3D() {
     if (!game.chapter) return;
     for (const ev of game.chapter.events) {
@@ -1155,21 +1357,31 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
       if (Math.abs(angleTo) > FOV * 0.65) continue;
 
       const screenX = W / 2 + (angleTo / (FOV / 2)) * W / 2;
-      const size = clamp(H / (dist * 4), 18 * DPR, 90 * DPR);
-      const screenY = H / 2 + H / (dist * 14);
+      const size = ev.character
+        ? clamp(H / (dist * 3.3), 28 * DPR, 150 * DPR)
+        : clamp(H / (dist * 4), 18 * DPR, 90 * DPR);
+      const screenY = ev.character ? H * 0.61 + H / (dist * 10) : H / 2 + H / (dist * 14);
 
       ctx.save();
       ctx.globalAlpha = clamp(1 - dist / 8, 0.15, 0.9);
-      ctx.fillStyle = ev.type === "choice" ? "rgba(189,154,79,0.95)" : "rgba(103,167,255,0.85)";
-      ctx.beginPath();
-      ctx.arc(screenX, screenY, size * 0.22, 0, TAU);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.45)";
-      ctx.stroke();
+      if (ev.character) {
+        drawCharacterSprite(ev.character, screenX, screenY, size, dist);
+        ctx.fillStyle = ev.type === "choice" ? "rgba(189,154,79,0.95)" : "rgba(103,167,255,0.88)";
+        ctx.beginPath();
+        ctx.arc(screenX, screenY - size * 2.58, size * 0.09, 0, TAU);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = ev.type === "choice" ? "rgba(189,154,79,0.95)" : "rgba(103,167,255,0.85)";
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, size * 0.22, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.45)";
+        ctx.stroke();
+      }
       ctx.font = `${Math.max(12, 15 * DPR)}px Georgia`;
       ctx.textAlign = "center";
       ctx.fillStyle = "#fff4d9";
-      ctx.fillText(ev.label, screenX, screenY - size * 0.35);
+      ctx.fillText(ev.label, screenX, ev.character ? screenY - size * 2.74 : screenY - size * 0.35);
       ctx.restore();
     }
   }
@@ -1402,9 +1614,9 @@ Original Shoes: ${game.hasOriginalShoe}/2`;
       game.triggered.add(closest.id);
       if (closest.nextChapter) {
         game.pendingNextChapter = closest.nextChapter;
-        startCutscene(closest.cutscene);
+        startCutscene(closest.cutscene, undefined, closest.character);
       } else {
-        startCutscene(closest.cutscene);
+        startCutscene(closest.cutscene, undefined, closest.character);
       }
     } else if (closest.type === "chapter") {
       loadChapter(closest.nextChapter);

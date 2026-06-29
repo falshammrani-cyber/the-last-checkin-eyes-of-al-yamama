@@ -9,6 +9,81 @@ window.STORY_DATA = {
     age: 18
   },
 
+  characters: {
+    saqer: {
+      name: "Saqer Al-Najdi",
+      age: 18,
+      role: "the unpaid guest",
+      wound: "He is afraid his father chose disappearance over him.",
+      truth: "He was protected, not abandoned.",
+      visual: { skin: "#b88962", hair: "#15110e", cloth: "#2b2f35", accent: "#67a7ff", eye: "#201a15" }
+    },
+    father: {
+      name: "Nasser Al-Najdi",
+      age: 47,
+      role: "the father in Room 000",
+      wound: "He traded memory for delay until he could no longer remember the son he saved.",
+      truth: "Love is not a transaction, even when a ledger tries to price it.",
+      visual: { skin: "#a77b5b", hair: "#3f332b", cloth: "#4b3a2e", accent: "#bd9a4f", eye: "#2a2119" }
+    },
+    mother: {
+      name: "Alya",
+      age: 43,
+      role: "the voice outside the hotel",
+      wound: "She survived by making grief practical.",
+      truth: "Her silence was a shelter, not indifference.",
+      visual: { skin: "#aa8062", hair: "#1f1713", cloth: "#34313a", accent: "#d9c6a3", eye: "#2a2119" }
+    },
+    zarqa: {
+      name: "Zarqa Al-Yamama",
+      age: "ancient",
+      role: "the prisoner behind the cameras",
+      wound: "Every future she sees becomes harder for others to escape.",
+      truth: "She is not the eye of the hotel. She is its captive witness.",
+      visual: { skin: "#8aa1b4", hair: "#10151d", cloth: "#18304a", accent: "#67a7ff", eye: "#67a7ff" }
+    },
+    bellboy: {
+      name: "The Bellboy",
+      age: "unrecorded",
+      role: "collector and polite stalker",
+      wound: "He has carried so many guests that he no longer knows if he was one.",
+      truth: "He hunts signatures, not bodies.",
+      visual: { skin: "#b19758", hair: "#080606", cloth: "#11100f", accent: "#bd9a4f", eye: "#f0d389" }
+    },
+    qareen: {
+      name: "The Qareen",
+      age: 18,
+      role: "Saqer's shadow-self",
+      wound: "It grows whenever survival becomes cruelty.",
+      truth: "It is not a monster until Saqer teaches it how to be one.",
+      visual: { skin: "#050505", hair: "#050505", cloth: "#090909", accent: "#8b1111", eye: "#d43b3b" }
+    },
+    child: {
+      name: "Maha",
+      age: 7,
+      role: "the child in Room 101",
+      wound: "She was taught that ambition can cost someone else's childhood.",
+      truth: "Returning a small shoe can open a larger road.",
+      visual: { skin: "#bd9271", hair: "#2c2018", cloth: "#5d4146", accent: "#d9c6a3", eye: "#1e1712" }
+    },
+    bride: {
+      name: "The Barefoot Bride",
+      age: 24,
+      role: "the vow that still walks",
+      wound: "Her marriage became a receipt for the dead.",
+      truth: "Respecting the vow matters more than defeating her.",
+      visual: { skin: "#c0a08a", hair: "#111010", cloth: "#e8dfcf", accent: "#8b1111", eye: "#321b1b" }
+    },
+    mudawwin: {
+      name: "Al-Mudawwin",
+      age: "older than the ledger",
+      role: "the one who records",
+      wound: "It cannot understand love that refuses accounting.",
+      truth: "The only unpaid future is the one offered to no one.",
+      visual: { skin: "#0c0a0a", hair: "#0c0a0a", cloth: "#15100c", accent: "#bd9a4f", eye: "#bd9a4f" }
+    }
+  },
+
   chapters: [
     {
       id: "welcome",
@@ -31,8 +106,9 @@ window.STORY_DATA = {
       walls: "lobby",
       events: [
         { id: "receipt", x: 3.5, y: 8.5, label: "Check-in machine", type: "choice", choice: "receiptChoice" },
-        { id: "phone", x: 8.5, y: 8.5, label: "Ringing phone", type: "choice", choice: "phoneChoice" },
-        { id: "elevator", x: 9.5, y: 2.5, label: "Elevator", type: "cutscene", cutscene: "bellboyIntro", nextChapter: "cctv" }
+        { id: "mirror", x: 5.5, y: 1.5, label: "Lobby mirror", type: "choice", choice: "mirrorChoice", character: "saqer" },
+        { id: "phone", x: 8.5, y: 8.5, label: "Ringing phone", type: "choice", choice: "phoneChoice", character: "father" },
+        { id: "elevator", x: 9.5, y: 2.5, label: "Elevator", type: "cutscene", cutscene: "bellboyIntro", nextChapter: "cctv", character: "bellboy" }
       ],
       intro: "opening"
     },
@@ -57,7 +133,8 @@ window.STORY_DATA = {
       walls: "security",
       events: [
         { id: "cctvdesk", x: 5.5, y: 5.5, label: "CCTV desk", type: "choice", choice: "visionChoice" },
-        { id: "bluecamera", x: 9.5, y: 2.5, label: "Blue-eyed camera", type: "cutscene", cutscene: "zarqaFirstWhisper" },
+        { id: "childfeed", x: 2.5, y: 1.5, label: "Childhood feed", type: "cutscene", cutscene: "saqerChildFeed", character: "saqer" },
+        { id: "bluecamera", x: 9.5, y: 2.5, label: "Blue-eyed camera", type: "cutscene", cutscene: "zarqaFirstWhisper", character: "zarqa" },
         { id: "exit2", x: 10.3, y: 8.7, label: "Service door", type: "chapter", nextChapter: "rooms" }
       ],
       intro: "cctvIntro"
@@ -82,7 +159,7 @@ window.STORY_DATA = {
       start: { x: 2.0, y: 9.0, angle: -0.7 },
       walls: "rooms",
       events: [
-        { id: "room101", x: 2.5, y: 3.5, label: "Room 101", type: "choice", choice: "childShoeChoice" },
+        { id: "room101", x: 2.5, y: 3.5, label: "Room 101", type: "choice", choice: "childShoeChoice", character: "child" },
         { id: "room204", x: 5.5, y: 5.5, label: "Room 204 Contracts", type: "choice", choice: "contractOrderChoice" },
         { id: "room309", x: 9.5, y: 3.5, label: "Perfumed room", type: "choice", choice: "perfumeChoice" },
         { id: "exit3", x: 10.2, y: 8.6, label: "Red corridor access", type: "chapter", nextChapter: "wedding" }
@@ -110,7 +187,7 @@ window.STORY_DATA = {
       walls: "wedding",
       events: [
         { id: "vow", x: 4.5, y: 7.5, label: "Vow warning", type: "choice", choice: "weddingShoeChoice" },
-        { id: "bride", x: 8.5, y: 3.5, label: "Barefoot Bride", type: "cutscene", cutscene: "brideReveal" },
+        { id: "bride", x: 8.5, y: 3.5, label: "Barefoot Bride", type: "cutscene", cutscene: "brideReveal", character: "bride" },
         { id: "exit4", x: 10.2, y: 1.5, label: "Old service elevator", type: "chapter", nextChapter: "survivor" }
       ],
       intro: "weddingIntro"
@@ -135,8 +212,8 @@ window.STORY_DATA = {
       start: { x: 2.0, y: 9.0, angle: -0.5 },
       walls: "service",
       events: [
-        { id: "survivor", x: 6.5, y: 6.5, label: "Faceless survivor", type: "choice", choice: "survivorChoice" },
-        { id: "shadow", x: 8.5, y: 3.5, label: "Late shadow", type: "cutscene", cutscene: "qareenAwakens" },
+        { id: "survivor", x: 6.5, y: 6.5, label: "Faceless survivor", type: "choice", choice: "survivorChoice", character: "qareen" },
+        { id: "shadow", x: 8.5, y: 3.5, label: "Late shadow", type: "cutscene", cutscene: "qareenAwakens", character: "qareen" },
         { id: "exit5", x: 10.3, y: 1.7, label: "Basement stairs", type: "chapter", nextChapter: "bank" }
       ],
       intro: "survivorIntro"
@@ -162,7 +239,8 @@ window.STORY_DATA = {
       walls: "bank",
       events: [
         { id: "atm", x: 6.5, y: 5.5, label: "Memory ATM", type: "choice", choice: "atmPinChoice" },
-        { id: "vault", x: 9.5, y: 2.5, label: "Rejected transaction", type: "cutscene", cutscene: "fatherTransaction" },
+        { id: "mother", x: 2.5, y: 1.5, label: "Mother's voice", type: "choice", choice: "motherVoiceChoice", character: "mother" },
+        { id: "vault", x: 9.5, y: 2.5, label: "Rejected transaction", type: "cutscene", cutscene: "fatherTransaction", character: "father" },
         { id: "exit6", x: 10.2, y: 8.7, label: "Room 000 access", type: "chapter", nextChapter: "father" }
       ],
       intro: "bankIntro"
@@ -187,7 +265,8 @@ window.STORY_DATA = {
       start: { x: 2.0, y: 9.0, angle: -1.0 },
       walls: "home",
       events: [
-        { id: "father", x: 6.0, y: 5.5, label: "Father", type: "choice", choice: "fatherChoice" },
+        { id: "table", x: 3.5, y: 3.5, label: "Family table", type: "cutscene", cutscene: "familyTableMemory", character: "mother" },
+        { id: "father", x: 6.0, y: 5.5, label: "Father", type: "choice", choice: "fatherChoice", character: "father" },
         { id: "exit7", x: 10.1, y: 1.5, label: "Descent to Eye Tower", type: "chapter", nextChapter: "tower" }
       ],
       intro: "fatherIntro"
@@ -212,8 +291,8 @@ window.STORY_DATA = {
       start: { x: 2.0, y: 9.0, angle: -1.0 },
       walls: "tower",
       events: [
-        { id: "zarqa", x: 6.0, y: 5.2, label: "Zarqa's eyeless chair", type: "cutscene", cutscene: "towerReveal" },
-        { id: "final", x: 6.0, y: 3.5, label: "Ledger Well", type: "choice", choice: "finalChoice" }
+        { id: "zarqa", x: 6.0, y: 5.2, label: "Zarqa's eyeless chair", type: "cutscene", cutscene: "towerReveal", character: "zarqa" },
+        { id: "final", x: 6.0, y: 3.5, label: "Ledger Well", type: "choice", choice: "finalChoice", character: "mudawwin" }
       ],
       intro: "towerIntro"
     }
@@ -221,9 +300,10 @@ window.STORY_DATA = {
 
   cutscenes: {
     opening: [
-      { speaker: "SYSTEM", text: "The message arrives after midnight.\n\nNo number. No sender.\n\nOnly a hotel receipt on your phone screen." },
+      { speaker: "SYSTEM", text: "The message arrives after midnight.\n\nNo number. No sender.\n\nOnly a hotel receipt on your phone screen, stamped with the exact minute you turned eighteen." },
       { speaker: "RECEIPT", text: "Guest Name: Saqer\nAge: 18\nRoom: 000\nGuardian: Not Required\nBalance: One Unwritten Future\nCollection Status: Active" },
-      { speaker: "HOTEL SPEAKER", text: "Congratulations, Mr. Saqer.\nYou are now old enough to pay." }
+      { speaker: "HOTEL SPEAKER", text: "Congratulations, Mr. Saqer.\nYou are now old enough to pay." },
+      { speaker: "SAQER", text: "My father vanished owing this place a debt.\nEveryone told me grief makes patterns where there are none.\nBut the receipt knows my name." }
     ],
     bellboyIntro: [
       { speaker: "ELEVATOR", text: "The elevator opens by itself.\n\nInside stands a bellboy wearing a cracked golden mask. His luggage whispers with many voices." },
@@ -233,6 +313,12 @@ window.STORY_DATA = {
     cctvIntro: [
       { speaker: "SECURITY OFFICE", text: "Dust covers the monitors. The power switch is already warm, as if someone used it seconds ago." },
       { speaker: "SYSTEM", text: "When the screens wake, every camera shows you.\nOne angle from above.\nOne from behind.\nOne from five minutes in the future." }
+    ],
+    saqerChildFeed: [
+      { speaker: "CCTV FEED 03", text: "The monitor shows a kitchen table from eleven years ago.\nYour mother folds a school uniform with the economy of someone hiding panic." },
+      { speaker: "MOTHER", text: "If your father calls, do not be angry first.\nBe alive first." },
+      { speaker: "SAQER", text: "I remember hating that sentence.\nI remember needing it." },
+      { speaker: "HOTEL RECORD", text: "Domestic memory detected.\nGrief response indexed.\nDenial resistance available." }
     ],
     zarqaFirstWhisper: [
       { speaker: "ZARQA", text: "I saw armies before they arrived.\nI saw cities before they burned.\nBut you...\nYou are empty." },
@@ -270,15 +356,21 @@ window.STORY_DATA = {
     fatherIntro: [
       { speaker: "ROOM 000", text: "Room 000 is not a hotel room.\nIt is your childhood home, rebuilt from someone else's dying memory." },
       { speaker: "FATHER", text: "Every year, I gave it one memory of you.\nYour first word.\nYour first step.\nYour face at seven.\nYour voice at twelve." },
-      { speaker: "FATHER", text: "I gave everything I had of you, so it would not find you." },
+      { speaker: "FATHER", text: "I gave everything I had of you, so it would not find you.\nThen one morning I woke and could only remember the fear, not the boy it belonged to." },
       { speaker: "FATHER", text: "Are you my son?" }
+    ],
+    familyTableMemory: [
+      { speaker: "FAMILY TABLE", text: "Three plates wait under plastic wrap.\nOne is warm. One is cold. One has been served every night for seven years." },
+      { speaker: "MOTHER", text: "Your father did not leave cleanly, Saqer.\nNo suitcase. No goodbye. Just sand in his shoes and blood on a receipt." },
+      { speaker: "FATHER", text: "I thought if the hotel forgot you, you could grow into someone it could not price." },
+      { speaker: "SAQER", text: "The table does not forgive him.\nIt only proves he was real." }
     ],
     towerIntro: [
       { speaker: "EYE TOWER", text: "The tower is buried upside down.\nYou do not climb toward sight.\nYou descend into the place where sight was stolen." },
       { speaker: "SYSTEM", text: "CCTV cables become black roots.\nReceipts hang like dead leaves.\nHundreds of lenses open in the dark." }
     ],
     towerReveal: [
-      { speaker: "ZARQA", text: "I saw every guest before they died.\nI saw every betrayal before it was spoken.\nBut when I looked at you, there was nothing." },
+      { speaker: "ZARQA", text: "I saw every guest before they died.\nI saw every betrayal before it was spoken.\nBut when I looked at you, there was nothing.\nNot emptiness. Mercy." },
       { speaker: "AL-MUDAWWIN", text: "A man without a written future is theft from reality.\nYou are the missing number.\nYou are the unpaid line.\nYou are the error." }
     ]
   },
@@ -311,6 +403,37 @@ window.STORY_DATA = {
           result: "Al-Mudawwin marks you as non-compliant. The Survival Way becomes stronger.",
           effects: { survival: 2, debt: -1, bellboyHeat: 1, burnedReceipt: true },
           after: "The ash forms one word: OVERDUE."
+        }
+      ]
+    },
+
+    mirrorChoice: {
+      title: "The Lobby Mirror",
+      text: "The mirror does not show your face clearly. It shows the expression you wore when you decided your father abandoned you.",
+      options: [
+        {
+          text: "Admit you are angry at him.",
+          result: "The reflection becomes painfully human. Anger stops pretending to be certainty.",
+          effects: { grief: 1, selfKnowledge: 2, denial: -1 },
+          after: "Your reflection mouths: I can be angry and still want the truth."
+        },
+        {
+          text: "Blame him for everything.",
+          result: "The hotel accepts the clean story. Clean stories are easy to own.",
+          effects: { denial: 2, debt: 1, qareen: 1 },
+          after: "The mirror smiles with your mouth half a second late."
+        },
+        {
+          text: "Look away.",
+          result: "You keep moving, but the question follows you into the elevator.",
+          effects: { survival: 1, denial: 1 },
+          after: "Behind you, the glass exhales."
+        },
+        {
+          text: "Remember your mother's warning.",
+          result: "The memory hurts, but it anchors you to life outside the hotel.",
+          effects: { empathy: 1, grief: 1, selfKnowledge: 1 },
+          after: "Her voice says: Be alive first."
         }
       ]
     },
@@ -559,6 +682,37 @@ window.STORY_DATA = {
           result: "You avoid the machine but lose a major truth.",
           effects: { survival: 1, curiosity: -2 },
           after: "The ATM whispers: Unclaimed memories accrue interest."
+        }
+      ]
+    },
+
+    motherVoiceChoice: {
+      title: "Mother's Voice",
+      text: "The receiver plays your mother's voice from a day she never told you about. She sounds younger, exhausted, and careful with every word.",
+      options: [
+        {
+          text: "Listen without interrupting.",
+          result: "You hear fear beneath her silence. The story becomes less clean and more true.",
+          effects: { empathy: 2, grief: 1, selfKnowledge: 1, knowsFatherTruth: true },
+          after: "She says: He begged them to take his name instead of yours."
+        },
+        {
+          text: "Demand why she hid this.",
+          result: "The hotel feeds on the accusation, but part of it is deserved.",
+          effects: { grief: 1, denial: 1, debt: 1 },
+          after: "The line fills with breathing from too many rooms."
+        },
+        {
+          text: "Hang up before it becomes a trap.",
+          result: "You survive the lure, but leave a truth unclaimed.",
+          effects: { survival: 1, denial: 1 },
+          after: "The phone keeps talking into the cradle."
+        },
+        {
+          text: "Promise your life is not a debt.",
+          result: "The promise gives shape to the ending the hotel cannot calculate.",
+          effects: { empathy: 1, selfKnowledge: 2, survival: 1, debt: -1 },
+          after: "For a moment, the basement bank loses all signal."
         }
       ]
     },

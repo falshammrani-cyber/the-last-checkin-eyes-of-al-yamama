@@ -1,7 +1,7 @@
 # THE LAST CHECK-IN: EYES OF AL-YAMAMA
 ## آخر تسجيل دخول: عيون اليمامة
 
-A runnable high-resolution browser survival-horror demo.
+A runnable high-resolution browser survival-horror demo with grounded characters, psychological choice tracking, and a full playable story path.
 
 **Protagonist / Guest:** Saqer  
 **Age:** 18  
@@ -76,6 +76,8 @@ On-screen buttons are included:
 - High-DPI 3D-style raycast rendering with no external dependencies.
 - Dense fog, depth haze, flashlight falloff, film grain, scanlines, and foreground silhouette.
 - Slower survival-horror movement with heavier turning and reduced strafing.
+- Grounded character profiles for Saqer, his parents, Zarqa, the Bellboy, the Qareen, the Barefoot Bride, and Al-Mudawwin.
+- In-world character silhouettes and cutscene portraits drawn directly in canvas/CSS for an asset-light but more human presentation.
 - Bellboy AI with pathing, line-of-sight pursuit, route habit tracking, and shoe-lure response.
 - Inventory wheel, chapter select, save/load, and mobile controls.
 - Psychological choice system:
@@ -85,6 +87,10 @@ On-screen buttons are included:
   - Vision
   - Sacrifice
   - Qareen
+  - Empathy
+  - Denial
+  - Grief
+  - Self-Knowledge
 - Cutscene engine.
 - Branching endings.
 - Ambient horror audio created through WebAudio.
@@ -104,3 +110,7 @@ Every choice should change something:
 - Cutscene dialogue
 - Ending path
 - The player's relationship with Zarqa, Al-Mudawwin, the Bellboy, and the Qareen
+
+## Story Direction
+
+The current story pass uses high-level survival-horror lessons from psychological and domestic horror: a personal wound at the center, symbolic spaces that accuse the player, and a family truth that changes how earlier scenes read. It does not copy characters, plot beats, names, or scenes from other games; the setting and mythology remain original to **Eyes of Al-Yamama**.
