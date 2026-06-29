@@ -24,14 +24,17 @@ https://github.com/falshammrani-cyber/the-last-checkin-eyes-of-al-yamama
 - Bellboy AI with pathing, line-of-sight pursuit, shoe lure response, and route habit tracking.
 - Inventory wheel, chapter select, save/load, mobile controls, and branch-sensitive endings.
 - True ending now requires restraint plus a humane psychological state, not only mechanical completion.
+- HTML references versioned CSS/JS assets so GitHub Pages browsers pull this checkpoint instead of stale cached scripts.
 
 ## Checkpoints
 
 - `checkpoint-high-res-survival-horror-2026-06-30`
 - `checkpoint-realistic-characters-story-depth-2026-06-30`
+- `checkpoint-realistic-characters-story-depth-2026-06-30-final`
 
 ## Verification
 
 - JavaScript syntax checks pass for `game.js` and `story-data.js`.
 - Local smoke test on `http://localhost:8080` confirms the title screen, opening cutscene, Saqer portrait/profile, high-DPI canvas render, and no browser console errors.
+- Versioned asset smoke test confirms the new opening line executes from `story-data.js?v=story-depth-20260630`.
 - Deployed GitHub Pages smoke test should confirm the live page starts the game after push.
